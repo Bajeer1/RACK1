@@ -74,7 +74,8 @@ class _ImageUploaderState extends State<ImageUploader> {
             setState(() {
               _isUploading = true;
             });
-            String fileName = basename(_file.path);
+            String fileName = basename(_image!.path);
+
             String downloadUrl =
                 await uploadImage(_file, fileName) ?? 'Error uploading image';
             setState(() {
