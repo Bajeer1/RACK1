@@ -70,20 +70,8 @@ class _ImageUploaderState extends State<ImageUploader> {
                 child: Text('Select Image'),
               ),
         ElevatedButton(
-          onPressed: () async {
-            setState(() {
-              _isUploading = true;
-            });
-            String fileName = basename(_image!.path);
-
-            String downloadUrl =
-                await uploadImage(_file, fileName) ?? 'Error uploading image';
-            setState(() {
-              _isUploading = false;
-              _imageUrl = downloadUrl;
-            });
-          },
-          child: Text('Upload Image'),
+          onPressed: () => getImage(),
+          child: Text('Select Image'),
         ),
         _isUploading ? CircularProgressIndicator() : Container(),
       ],
