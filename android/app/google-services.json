@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "914480152951",
+    "project_id": "rack-b2600",
+    "storage_bucket": "rack-b2600.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:914480152951:android:2eebeb688b15de82c16172",
+        "android_client_info": {
+          "package_name": "com.example.rack"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "914480152951-g3vqf6lpie19ei5c021nngigc4njg97d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCM1a3WFsRlz-QSJ17EKJwiPChkEm7i2o4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "914480152951-g3vqf6lpie19ei5c021nngigc4njg97d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
