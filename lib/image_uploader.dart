@@ -1,29 +1,52 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
-import 'package:firebase_storage/firebase_storage.dart';
+class ImageUploader extends StatefulWidget {
+  final Function(File) onImageSelected;
 
-class ImageUploader {
-  late final String _fileName;
-  late final File _file;
+  const ImageUploader({required this.onImageSelected});
 
-  Future<String?> uploadFile() async {
-    final storageReference =
-        FirebaseStorage.instance.ref().child("images/$_fileName");
+  @override
+  _ImageUploaderState createState() => _ImageUploaderState();
+}
 
-    final uploadTask = storageReference.putFile(_file);
+class _ImageUploaderState extends State<ImageUploader> {
+  final ImagePicker _picker = ImagePicker();
+  late File _image;
 
-    try {
-      await uploadTask;
-      final downloadUrl = await storageReference.getDownloadURL();
-      return downloadUrl;
-    } catch (error) {
-      print("Firebase Storage Error: $error");
-      return null;
+  Future<void> _getImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+      });
+      widget.onImageSelected(_image);
     }
   }
 
-  void setFile(File file, String fileName) {
-    _file = file;
-    _fileName = fileName;
+  Future<void> _uploadImage() async {
+    if (_image != null) {
+      // implement your image upload logic here
+      print('Uploading image...');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: <Widget>[
+        IconButton(
+          icon: Icon(Icons.photo_camera),
+          onPressed: _getImage,
+        ),
+        ElevatedButton(
+          child: Text('Upload Image'),
+          onPressed: _uploadImage,
+        ),
+      ],
+    );
   }
 }
