@@ -1,22 +1,29 @@
 import 'dart:io';
+
 import 'package:firebase_storage/firebase_storage.dart';
 
 class ImageUploader {
-  final FirebaseStorage _storage =
-      FirebaseStorage.instanceFor(bucket: 'wallpaper');
+  late final String _fileName;
+  late final File _file;
 
-  Future<String?> uploadImage(File file, String fileName) async {
-    Reference storageRef =
-        FirebaseStorage.instance.ref().child("wallpaper/$fileName");
-    UploadTask uploadTask = storageRef.putFile(file);
+  Future<String?> uploadFile() async {
+    final storageReference =
+        FirebaseStorage.instance.ref().child("images/$_fileName");
+
+    final uploadTask = storageReference.putFile(_file);
 
     try {
       await uploadTask;
-      String downloadUrl = await storageRef.getDownloadURL();
+      final downloadUrl = await storageReference.getDownloadURL();
       return downloadUrl;
     } catch (error) {
       print("Firebase Storage Error: $error");
       return null;
     }
+  }
+
+  void setFile(File file, String fileName) {
+    _file = file;
+    _fileName = fileName;
   }
 }
