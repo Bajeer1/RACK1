@@ -1,73 +1,85 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'image_uploader.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-class HomePage extends StatefulWidget {
+import 'wallpaper.dart';
+
+class HomePageContent extends StatefulWidget {
   @override
-  _HomePageState createState() => _HomePageState();
+  _HomePageContentState createState() => _HomePageContentState();
 }
 
-class _HomePageState extends State<HomePage> {
-  final ImagePicker _picker = ImagePicker();
-  final ImageUploader _uploader = ImageUploader();
-  File? _imageFile;
-  bool _isUploading = false;
-
-  Future<void> _pickImage() async {
-    PickedFile? pickedFile =
-        await _picker.getImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
-    }
+class _HomePageContentState extends State<HomePageContent> {
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection("images")
+            .orderBy("createdAt", descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+          List<DocumentSnapshot> docs = snapshot.data!.docs;
+          List<Widget> images = docs
+              .map((doc) => InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => WallpaperDetail(
+                            imgUrl: doc['url'],
+                          ),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: CachedNetworkImage(
+                        imageUrl: doc['url'],
+                        placeholder: (context, url) =>
+                            CircularProgressIndicator(),
+                        errorWidget: (context, url, error) => Icon(Icons.error),
+                      ),
+                    ),
+                  ))
+              .toList();
+          return StaggeredGridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 10.0,
+            mainAxisSpacing: 10.0,
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            children: images,
+            staggeredTiles: docs.map((doc) => StaggeredTile.fit(1)).toList(),
+          );
+        },
+      ),
+    );
   }
+}
 
-  Future<void> _uploadImage() async {
-    if (_imageFile != null) {
-      setState(() {
-        _isUploading = true;
-      });
-      String? downloadUrl = await _uploader.uploadImage(
-          _imageFile!, _imageFile!.path.split('/').last);
-      setState(() {
-        _isUploading = false;
-        _imageFile = null;
-      });
-      if (downloadUrl != null) {
-        // Handle successful upload here
-      } else {
-        // Handle failed upload here
-      }
-    }
-  }
+class WallpaperDetail extends StatelessWidget {
+  final String imgUrl;
+
+  WallpaperDetail({required this.imgUrl});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Image Upload'),
+        title: Text("Wallpaper"),
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: _isUploading
-              ? CircularProgressIndicator()
-              : _imageFile == null
-                  ? TextButton(
-                      onPressed: _pickImage,
-                      child: Text('Select Image'),
-                    )
-                  : Column(
-                      children: [
-                        Image.file(_imageFile!),
-                        TextButton(
-                          onPressed: _uploadImage,
-                          child: Text('Upload Image'),
-                        ),
-                      ],
-                    ),
+      body: Center(
+        child: CachedNetworkImage(
+          imageUrl: imgUrl,
+          placeholder: (context, url) => CircularProgressIndicator(),
+          errorWidget: (context, url, error) => Icon(Icons.error),
         ),
       ),
     );
