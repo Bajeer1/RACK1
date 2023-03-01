@@ -1,85 +1,85 @@
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 
-import 'wallpaper.dart';
-
-class HomePageContent extends StatefulWidget {
+class HomePage extends StatefulWidget {
   @override
-  _HomePageContentState createState() => _HomePageContentState();
+  _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageContentState extends State<HomePageContent> {
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection("images")
-            .orderBy("createdAt", descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-          List<DocumentSnapshot> docs = snapshot.data!.docs;
-          List<Widget> images = docs
-              .map((doc) => InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => WallpaperDetail(
-                            imgUrl: doc['url'],
-                          ),
-                        ),
-                      );
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: CachedNetworkImage(
-                        imageUrl: doc['url'],
-                        placeholder: (context, url) =>
-                            CircularProgressIndicator(),
-                        errorWidget: (context, url, error) => Icon(Icons.error),
-                      ),
-                    ),
-                  ))
-              .toList();
-          return StaggeredGridView.count(
-            crossAxisCount: 2,
-            crossAxisSpacing: 10.0,
-            mainAxisSpacing: 10.0,
-            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            children: images,
-            staggeredTiles: docs.map((doc) => StaggeredTile.fit(1)).toList(),
-          );
-        },
-      ),
-    );
+class _HomePageState extends State<HomePage> {
+  late File _image;
+  late String _uploadedFileURL;
+
+  Future chooseFile() async {
+    await ImagePicker().getImage(source: ImageSource.gallery).then((image) {
+      setState(() {
+        _image = File(image!.path);
+      });
+    });
   }
-}
 
-class WallpaperDetail extends StatelessWidget {
-  final String imgUrl;
-
-  WallpaperDetail({required this.imgUrl});
+  Future uploadFile() async {
+    String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+    Reference storageReference =
+        FirebaseStorage.instance.ref().child('images/$fileName');
+    UploadTask uploadTask = storageReference.putFile(_image);
+    await uploadTask.whenComplete(() async {
+      try {
+        String downloadUrl = await storageReference.getDownloadURL();
+        setState(() {
+          _uploadedFileURL = downloadUrl;
+        });
+      } catch (error) {
+        print("Firebase Storage Error: $error");
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Wallpaper"),
+        title: Text('RACK1'),
       ),
       body: Center(
-        child: CachedNetworkImage(
-          imageUrl: imgUrl,
-          placeholder: (context, url) => CircularProgressIndicator(),
-          errorWidget: (context, url, error) => Icon(Icons.error),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            _image == null
+                ? Text('No image selected.')
+                : Image.file(
+                    _image,
+                    height: 300,
+                  ),
+            SizedBox(
+              height: 20.0,
+            ),
+            ElevatedButton(
+              child: Text('Select Image'),
+              onPressed: chooseFile,
+            ),
+            SizedBox(
+              height: 20.0,
+            ),
+            ElevatedButton(
+              child: Text('Upload Image'),
+              onPressed: uploadFile,
+            ),
+            SizedBox(
+              height: 20.0,
+            ),
+            _uploadedFileURL != null
+                ? Image.network(
+                    _uploadedFileURL,
+                    height: 300,
+                  )
+                : Container(),
+          ],
         ),
       ),
     );
